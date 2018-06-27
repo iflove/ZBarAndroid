@@ -1,15 +1,8 @@
-package me.zbar;
+package net.sourceforge.zbar;
 
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.text.TextUtils;
-
-import net.sourceforge.zbar.BarcodeFormat;
-import net.sourceforge.zbar.BarcodeResult;
-import net.sourceforge.zbar.Config;
-import net.sourceforge.zbar.Image;
-import net.sourceforge.zbar.ImageScanner;
-import net.sourceforge.zbar.Symbol;
-import net.sourceforge.zbar.SymbolSet;
 
 public final class ZBarScanner {
     static {
@@ -33,16 +26,38 @@ public final class ZBarScanner {
         this.imageScanner = imageScanner;
     }
 
-    public BarcodeResult getBarcodeResult(byte[] imgData, int width, int height, Rect cropRect) {
+    public BarcodeResult getBarcodeResult(byte[] previewImgData, int width, int height, Rect cropRect) {
+        if (previewImgData == null) {
+            return null;
+        }
         Image barcode = new Image(width, height, "Y800");
-        barcode.setData(imgData);
+        barcode.setData(previewImgData);
         if (cropRect != null) {
             barcode.setCrop(cropRect.left, cropRect.top, cropRect.width(), cropRect.height());
         }
-        if (imageScanner == null) {
+        return this.getBarcodeResult(barcode);
+    }
+
+    public BarcodeResult getBarcodeResult(Bitmap bitmap) {
+        if (bitmap == null) {
             return null;
         }
-        if (imageScanner.scanImage(barcode) != 0) {
+        try {
+            int picWidth = bitmap.getWidth();
+            int picHeight = bitmap.getHeight();
+            Image barcode = new Image(picWidth, picHeight, "RGB4");
+            int[] pix = new int[picWidth * picHeight];
+            bitmap.getPixels(pix, 0, picWidth, 0, 0, picWidth, picHeight);
+            barcode.setData(pix);
+            return getBarcodeResult(barcode.convert("Y800"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public BarcodeResult getBarcodeResult(Image y800Barcode) {
+        if (imageScanner != null && imageScanner.scanImage(y800Barcode) != 0) {
             SymbolSet syms = imageScanner.getResults();
             for (Symbol sym : syms) {
                 String symData = sym.getData();
@@ -53,4 +68,6 @@ public final class ZBarScanner {
         }
         return null;
     }
+
+
 }
