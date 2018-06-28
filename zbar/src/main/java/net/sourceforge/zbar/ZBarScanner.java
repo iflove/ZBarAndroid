@@ -69,5 +69,4 @@ public final class ZBarScanner {
         return null;
     }
 
-
 }
